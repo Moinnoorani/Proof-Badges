@@ -1,0 +1,1 @@
+testFuzz_mint_soulboundSucceeds|testFuzz_nonSoulbound_transferSucceeds|testFuzz_soulbound_transferReverts

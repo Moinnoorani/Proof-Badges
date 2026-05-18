@@ -24,7 +24,7 @@ describe("eligibility — Property 1: Claim eligibility predicate", () => {
     status: statusArb,
     alreadyClaimed: fc.boolean(),
     balance: fc.bigInt(),
-    quote: fc.bigInt({ min: 0n }),
+    quote: fc.bigInt({ min: BigInt(0) }),
   });
 
   it("canClaim returns true iff status === 'active' AND !alreadyClaimed AND balance >= quote", () => {
@@ -59,7 +59,7 @@ describe("eligibility — Property 1: Claim eligibility predicate", () => {
           claimed1: fc.boolean(),
           claimed2: fc.boolean(),
           balance: fc.bigInt(),
-          quote: fc.bigInt({ min: 0n }),
+          quote: fc.bigInt({ min: BigInt(0) }),
         }),
         ({ status1, status2, claimed1, claimed2, balance, quote }) => {
           // showFaucet should return the same value regardless of status or alreadyClaimed

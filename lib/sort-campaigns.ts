@@ -2,7 +2,6 @@ export type CampaignWithTimestamp = {
   createdAt: number;
   name: string;
   creator: string;
-  [key: string]: unknown;
 };
 
 /**

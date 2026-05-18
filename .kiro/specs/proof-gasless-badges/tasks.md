@@ -128,7 +128,7 @@ Stack: Next.js 14 App Router + TypeScript, Tailwind + shadcn/ui, wagmi v2 + viem
     - **Validates: Requirements 1.3, 2.5, 10.1, 10.2**
     - File: `hooks/use-ugf-pipeline.test.ts`. fast-check generates random valid SDK event sequences (including `failure` and `retry` events). Assert: (a) stage success ordering, (b) at-most-one-active, (c) failure halts subsequent, (d) retry resumes from failed stage. Min 200 iterations.
 
-- [~] 3. Checkpoint — pure logic verified
+- [-] 3. Checkpoint — pure logic verified
   - Run `npm run test`. Ensure all property tests pass. Ask the user if questions arise.
 
 - [ ] 4. Implement and test the BadgeContract (Foundry)

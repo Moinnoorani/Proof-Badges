@@ -87,47 +87,71 @@ export function useCampaign(campaignId: string) {
     };
   }, [campaignId]);
 
-  const { data: onChainData, isLoading: onChainLoading, refetch: refetchOnChain } = useReadContract({
+  const isZeroAddress = BADGE_CONTRACT_ADDRESS === "0x0000000000000000000000000000000000000000";
+
+  const { data: onChainData, isLoading: onChainLoading, isError: onChainError, refetch: refetchOnChain } = useReadContract({
     address: BADGE_CONTRACT_ADDRESS,
     abi: badgeAbi,
     functionName: "campaigns",
     args: [BigInt(campaignId)],
-    query: { enabled: !!meta },
+    query: { enabled: !!meta && !isZeroAddress },
   });
 
   const { data: claimedData, refetch: refetchClaimed } = useReadContract({
     address: BADGE_CONTRACT_ADDRESS,
     abi: badgeAbi,
     functionName: "hasClaimed",
-    args: [BigInt(campaignId), address ?? "0x0000000000000000000000000000000000000000"],
-    query: { enabled: !!meta && !!address },
+    args: [BigInt(campaignId), address!],
+    query: { enabled: !!meta && !!address && !isZeroAddress },
   });
 
   const campaign: CampaignLive | null = useMemo(() => {
-    if (!meta || !onChainData) return null;
-    const [startTime, endTime, maxSupply, mintedCount] = onChainData;
-    return {
-      ...meta,
-      mintedCount: Number(mintedCount),
-      status: deriveStatus(
-        {
-          startTime: Number(startTime),
-          endTime: Number(endTime),
-          maxSupply: Number(maxSupply),
-          mintedCount: Number(mintedCount),
-        },
-        Math.floor(Date.now() / 1000),
-      ),
-      alreadyClaimed: claimedData ?? false,
-    };
-  }, [meta, onChainData, claimedData]);
+    if (!meta) return null;
+
+    if (onChainData) {
+      const [startTime, endTime, maxSupply, mintedCount] = onChainData;
+      return {
+        ...meta,
+        mintedCount: Number(mintedCount),
+        status: deriveStatus(
+          {
+            startTime: Number(startTime),
+            endTime: Number(endTime),
+            maxSupply: Number(maxSupply),
+            mintedCount: Number(mintedCount),
+          },
+          Math.floor(Date.now() / 1000),
+        ),
+        alreadyClaimed: claimedData ?? false,
+      };
+    }
+
+    if (isZeroAddress || onChainError) {
+      return {
+        ...meta,
+        mintedCount: 0,
+        status: deriveStatus(
+          {
+            startTime: meta.startTime,
+            endTime: meta.endTime,
+            maxSupply: meta.maxSupply,
+            mintedCount: 0,
+          },
+          Math.floor(Date.now() / 1000),
+        ),
+        alreadyClaimed: false,
+      };
+    }
+
+    return null;
+  }, [meta, onChainData, claimedData, isZeroAddress, onChainError]);
 
   const refresh = () => {
     refetchOnChain();
     refetchClaimed();
   };
 
-  const isLoading = metaLoading || onChainLoading;
+  const isLoading = metaLoading || (onChainLoading && !isZeroAddress);
 
   return {
     campaign,

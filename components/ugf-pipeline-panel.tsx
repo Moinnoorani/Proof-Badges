@@ -10,6 +10,7 @@ import {
   type StageName,
   STAGE_ORDER,
 } from "@/lib/pipeline";
+import { BASESCAN_TX_URL } from "@/lib/public-env";
 
 const STAGE_LABELS: Record<StageName, string> = {
   quote: "Quote",
@@ -95,7 +96,7 @@ export function UgfPipelinePanel({
           <div className="text-xs text-muted-foreground">
             Tx:{" "}
             <a
-              href={`https://sepolia.basescan.org/tx/${pipeline.txHash}`}
+              href={`${BASESCAN_TX_URL}${pipeline.txHash}`}
               target="_blank"
               rel="noopener noreferrer"
               className="text-primary underline hover:text-primary/80"

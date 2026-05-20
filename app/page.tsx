@@ -3,7 +3,8 @@ import { DiscoveryGrid } from "@/components/discovery-grid";
 
 async function getCampaigns() {
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL ?? ""}/api/campaigns`, {
+    const base = process.env.NEXT_PUBLIC_BASE_URL ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : `http://localhost:${process.env.PORT ?? 3000}`);
+    const res = await fetch(`${base}/api/campaigns`, {
       cache: "no-store",
     });
     if (!res.ok) throw new Error(`Failed to fetch campaigns: ${res.status}`);

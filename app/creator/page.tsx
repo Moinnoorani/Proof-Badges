@@ -9,6 +9,7 @@ import { CampaignCard, type CampaignCardData } from "@/components/campaign-card"
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { sortCampaignsByRecency } from "@/lib/sort-campaigns";
+import { NetworkGuard } from "@/components/network-guard";
 
 function CreatorDashboardContent() {
   const searchParams = useSearchParams();
@@ -26,8 +27,8 @@ function CreatorDashboardContent() {
       if (!res.ok) throw new Error("Failed to fetch campaigns");
       const data = await res.json() as CampaignCardData[];
       setCampaigns(data);
-    } catch {
-      // Handle silently - empty state shown
+    } catch (err) {
+      console.error("[CreatorDashboard] Failed to fetch campaigns:", err);
     } finally {
       setLoading(false);
     }
@@ -129,12 +130,14 @@ function CreatorDashboardContent() {
 
 export default function CreatorDashboardPage() {
   return (
-    <div className="min-h-screen p-4 md:p-8">
-      <div className="mx-auto max-w-6xl">
-        <Suspense fallback={<div className="space-y-4"><Skeleton className="h-8 w-48" /><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{[1, 2, 3].map((i) => <Skeleton key={i} className="aspect-video w-full rounded-lg" />)}</div></div>}>
-          <CreatorDashboardContent />
-        </Suspense>
+    <NetworkGuard>
+      <div className="min-h-screen p-4 md:p-8">
+        <div className="mx-auto max-w-6xl">
+          <Suspense fallback={<div className="space-y-4"><Skeleton className="h-8 w-48" /><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{[1, 2, 3].map((i) => <Skeleton key={i} className="aspect-video w-full rounded-lg" />)}</div></div>}>
+            <CreatorDashboardContent />
+          </Suspense>
+        </div>
       </div>
-    </div>
+    </NetworkGuard>
   );
 }

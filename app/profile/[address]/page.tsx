@@ -1,6 +1,7 @@
 import { isAddress } from "viem";
 import { AlertCircle } from "lucide-react";
 import { BadgeGrid } from "@/components/badge-grid";
+import { NetworkGuard } from "@/components/network-guard";
 
 export default function ProfilePage({
   params,
@@ -22,14 +23,16 @@ export default function ProfilePage({
   }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 px-4 py-8">
-      <div>
-        <h1 className="text-2xl font-bold">Badges</h1>
-        <p className="text-sm text-muted-foreground">
-          {address.slice(0, 6)}...{address.slice(-4)}
-        </p>
+    <NetworkGuard>
+      <div className="mx-auto max-w-6xl space-y-6 px-4 py-8">
+        <div>
+          <h1 className="text-2xl font-bold">Badges</h1>
+          <p className="text-sm text-muted-foreground">
+            {address.slice(0, 6)}...{address.slice(-4)}
+          </p>
+        </div>
+        <BadgeGrid address={address as `0x${string}`} />
       </div>
-      <BadgeGrid address={address as `0x${string}`} />
-    </div>
+    </NetworkGuard>
   );
 }

@@ -29,7 +29,7 @@ import { NetworkGuard } from "@/components/network-guard";
 export function CampaignForm() {
   const router = useRouter();
   const { address } = useAccount();
-  const { create, pipeline, campaignId } = useUgfCreateCampaign();
+  const { create, pipeline, campaignId, campaignIdError } = useUgfCreateCampaign();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -39,8 +39,8 @@ export function CampaignForm() {
   const [submitting, setSubmitting] = useState(false);
   const [metadataPosted, setMetadataPosted] = useState(false);
 
-  const form = useForm({
-    resolver: zodResolver(campaignSchema) as any,
+  const form = useForm<CampaignFormInput>({
+    resolver: zodResolver(campaignSchema),
     defaultValues: {
       name: "",
       description: "",
@@ -129,6 +129,7 @@ export function CampaignForm() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          campaignId: id,
           id,
           name: values.name,
           description: values.description,
@@ -150,7 +151,19 @@ export function CampaignForm() {
       router.push(`/creator?new=${id}`);
     } catch {
       toast.error("Failed to save campaign metadata. You can retry from the dashboard.");
+      // Reset flags so the user can attempt re-submission if they stay on the page.
+      setMetadataPosted(false);
+      setSubmitting(false);
     }
+  };
+
+  const resetForm = () => {
+    form.reset();
+    setImageFile(null);
+    setImagePreview(null);
+    setImageError(null);
+    setSubmitting(false);
+    setMetadataPosted(false);
   };
 
   useEffect(() => {
@@ -158,6 +171,13 @@ export function CampaignForm() {
       handlePostMetadata(campaignId.toString());
     }
   }, [campaignId, submitting, metadataPosted]);
+
+  useEffect(() => {
+    if (campaignIdError && submitting) {
+      toast.error(campaignIdError);
+      setSubmitting(false);
+    }
+  }, [campaignIdError, submitting]);
 
   const pipelineActive = pipeline.quote === "active" ||
     pipeline.settle === "active" ||

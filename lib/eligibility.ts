@@ -13,23 +13,19 @@ export interface ShowFaucetParams {
 }
 
 /**
- * Returns true iff the campaign is active, the wallet has not already claimed,
- * and the wallet balance covers the UGF quote.
+ * Returns true iff the campaign is active and the wallet has not already claimed.
+ * UGF quote check is removed — transactions are sent directly via MetaMask.
  */
 export function canClaim({
   status,
   alreadyClaimed,
-  balance,
-  quote,
 }: CanClaimParams): boolean {
-  return status === "active" && !alreadyClaimed && balance >= quote;
+  return status === "active" && !alreadyClaimed;
 }
 
 /**
- * Returns true iff the wallet balance is less than the UGF quote.
- * Independent from canClaim — the faucet CTA should show even when
- * the claim is also blocked by another reason.
+ * Always returns false — UGF is bypassed, MetaMask handles gas natively.
  */
-export function showFaucet({ balance, quote }: ShowFaucetParams): boolean {
-  return balance < quote;
+export function showFaucet(_params: ShowFaucetParams): boolean {
+  return false;
 }

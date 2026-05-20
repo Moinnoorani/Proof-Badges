@@ -14,8 +14,7 @@ export const campaignSchema = z
       .max(80, "Name must be 80 characters or fewer"),
     description: z
       .string()
-      .max(500, "Description must be 500 characters or fewer")
-      .default(""),
+      .max(500, "Description must be 500 characters or fewer"),
     imageUrl: z.string().min(1, "Image is required"),
     maxSupply: z
       .number()

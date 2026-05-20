@@ -4,8 +4,6 @@ import Link from "next/link";
 import "./globals.css";
 import { Providers } from "./providers";
 import { WalletButton } from "@/components/wallet-button";
-import { MockUsdBalance } from "@/components/mock-usd-balance";
-import { NetworkGuard } from "@/components/network-guard";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -20,8 +18,8 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Proof — Gasless Badges",
-  description: "Gasless POAP-style achievement badges on Base Sepolia via UGF",
+  title: "Proof — On-Chain Badges",
+  description: "Claim and create POAP-style achievement badges on Base Sepolia. Connect your wallet to get started.",
 };
 
 export default function RootLayout({
@@ -62,11 +60,10 @@ export default function RootLayout({
               </nav>
             </div>
             <div className="flex items-center gap-3">
-              <MockUsdBalance />
               <WalletButton />
             </div>
           </header>
-          <NetworkGuard>{children}</NetworkGuard>
+          {children}
         </Providers>
       </body>
     </html>

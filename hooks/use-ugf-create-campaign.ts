@@ -1,7 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useReducer, useState } from "react";
-import { useUGFModal } from "@tychilabs/react-ugf";
+import { useCallback, useReducer, useState } from "react";
 import { ethers } from "ethers";
 import { useAccount } from "wagmi";
 import {
@@ -13,7 +12,6 @@ import {
   STAGE_ORDER,
 } from "@/lib/pipeline";
 import { BADGE_CONTRACT_ADDRESS } from "@/lib/public-env";
-import { BASE_SEPOLIA_RPC } from "@/lib/public-env";
 import { mapErrorToUiMessage } from "@/lib/errors";
 
 type PipelineAction = PipelineEvent | { type: "reset" };
@@ -36,48 +34,9 @@ export interface CreateCampaignParams {
 
 export function useUgfCreateCampaign() {
   const { isConnected, address } = useAccount();
-  const { openUGF, result } = useUGFModal();
   const [state, dispatch] = useReducer(pipelineReducer, INITIAL_PIPELINE_STATE);
   const [campaignId, setCampaignId] = useState<bigint | null>(null);
-
-  useEffect(() => {
-    if (result?.txHash) {
-      const hash = result.txHash as `0x${string}`;
-      dispatch({
-        type: "stage_success",
-        stage: "confirm",
-        data: { txHash: hash },
-      });
-
-      (async () => {
-        try {
-          const provider = new ethers.JsonRpcProvider(BASE_SEPOLIA_RPC);
-          const receipt = await provider.getTransactionReceipt(result.txHash);
-          if (receipt) {
-            const iface = new ethers.Interface([
-              "event CampaignCreated(uint256 indexed campaignId, address indexed creator)",
-            ]);
-            for (const log of receipt.logs) {
-              try {
-                const parsed = iface.parseLog({
-                  topics: [...log.topics],
-                  data: log.data,
-                });
-                if (parsed?.name === "CampaignCreated") {
-                  setCampaignId(parsed.args.campaignId);
-                  break;
-                }
-              } catch {
-                // not the event we're looking for
-              }
-            }
-          }
-        } catch {
-          // receipt fetch failed, campaignId stays null
-        }
-      })();
-    }
-  }, [result]);
+  const [campaignIdError, setCampaignIdError] = useState<string | null>(null);
 
   const create = useCallback(
     async (params: CreateCampaignParams) => {
@@ -114,10 +73,53 @@ export function useUgfCreateCampaign() {
           params.baseURI,
         ]);
 
-        openUGF({
-          signer,
-          tx: { to: BADGE_CONTRACT_ADDRESS, data, value: "0x0" },
-          destChainId: "84532",
+        // Send directly via MetaMask — no Mock USD / UGF required
+        const tx = await signer.sendTransaction({
+          to: BADGE_CONTRACT_ADDRESS,
+          data,
+          value: "0x0",
+        });
+
+        dispatch({ type: "stage_success", stage: "execute" });
+        dispatch({ type: "stage_start", stage: "confirm" });
+
+        const receipt = await tx.wait();
+        if (receipt) {
+          const eventIface = new ethers.Interface([
+            "event CampaignCreated(uint256 indexed campaignId, address indexed creator)",
+          ]);
+          let found = false;
+          for (const log of receipt.logs) {
+            try {
+              const parsed = eventIface.parseLog({
+                topics: [...log.topics],
+                data: log.data,
+              });
+              if (parsed?.name === "CampaignCreated") {
+                setCampaignId(parsed.args.campaignId);
+                found = true;
+                break;
+              }
+            } catch {
+              // not the event we're looking for
+            }
+          }
+          if (!found) {
+            setCampaignIdError(
+              "Campaign was submitted but could not confirm the campaign ID. Please check your dashboard.",
+            );
+          }
+        } else {
+          setCampaignIdError(
+            "Transaction receipt not found. Please check your dashboard to confirm the campaign was created.",
+          );
+        }
+
+        const hash = (receipt?.hash ?? tx.hash) as `0x${string}`;
+        dispatch({
+          type: "stage_success",
+          stage: "confirm",
+          data: { txHash: hash },
         });
       } catch (e: any) {
         const uiError = mapErrorToUiMessage(e);
@@ -125,7 +127,7 @@ export function useUgfCreateCampaign() {
         dispatch({ type: "stage_failure", stage, error: uiError.message });
       }
     },
-    [isConnected, address, openUGF, state],
+    [isConnected, address, state],
   );
 
   const retry = useCallback(() => {
@@ -134,5 +136,5 @@ export function useUgfCreateCampaign() {
     }
   }, [state.failedStage]);
 
-  return { create, pipeline: state, retry, campaignId };
+  return { create, pipeline: state, retry, campaignId, campaignIdError };
 }

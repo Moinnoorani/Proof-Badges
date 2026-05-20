@@ -3,12 +3,13 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useAccount, useBalance } from "wagmi";
+import { useAccount } from "wagmi";
 import { ExternalLink, CheckCircle2, AlertCircle, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { useCampaign } from "@/hooks/use-campaign";
+import { BASESCAN_TX_URL } from "@/lib/public-env";
 import { useUgfClaim } from "@/hooks/use-ugf-claim";
-import { canClaim, showFaucet } from "@/lib/eligibility";
+import { canClaim } from "@/lib/eligibility";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,26 +24,19 @@ interface ClaimCardProps {
 
 export function ClaimCard({ campaignId }: ClaimCardProps) {
   const { address, isConnected } = useAccount();
-  const { data: balanceData } = useBalance({ address });
   const { campaign, isLoading, error: campaignError, refresh } = useCampaign(campaignId);
-  const { claim, pipeline, retry, reset, txHash: _txHash, quote } = useUgfClaim();
-  const [step2Done, setStep2Done] = useState(false);
+  const { claim, pipeline, retry, reset, txHash: _txHash } = useUgfClaim();
   const [claimStarted, setClaimStarted] = useState(false);
   const [claimConfirmed, setClaimConfirmed] = useState(false);
-
-  const balance = balanceData?.value ?? BigInt(0);
-  const quoteValue = quote ?? BigInt(0);
 
   const isClaimAllowed = campaign
     ? canClaim({
         status: campaign.status,
         alreadyClaimed: campaign.alreadyClaimed,
-        balance,
-        quote: quoteValue,
+        balance: BigInt(0),
+        quote: BigInt(0),
       })
     : false;
-
-  const needsFaucet = showFaucet({ balance, quote: quoteValue });
 
   useEffect(() => {
     if (pipeline.confirm === "success" && claimStarted) {
@@ -196,7 +190,7 @@ export function ClaimCard({ campaignId }: ClaimCardProps) {
               </div>
               {pipeline.txHash && (
                 <a
-                  href={`https://sepolia.basescan.org/tx/${pipeline.txHash}`}
+                  href={`${BASESCAN_TX_URL}${pipeline.txHash}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground justify-center"
@@ -216,8 +210,6 @@ export function ClaimCard({ campaignId }: ClaimCardProps) {
           {!showSuccess && !isConnected && (
             <OnboardingSteps
               step1Done={false}
-              step2Done={false}
-              onMarkStep2Done={() => {}}
             />
           )}
 
@@ -225,8 +217,6 @@ export function ClaimCard({ campaignId }: ClaimCardProps) {
             <>
               <OnboardingSteps
                 step1Done={true}
-                step2Done={step2Done}
-                onMarkStep2Done={() => setStep2Done(true)}
               />
 
               {pipelineActive && (
@@ -235,13 +225,6 @@ export function ClaimCard({ campaignId }: ClaimCardProps) {
 
               {!pipelineActive && (
                 <div className="space-y-3">
-                  {needsFaucet && (
-                    <div className="rounded-lg bg-amber-50 dark:bg-amber-950/20 p-3 text-center">
-                      <p className="text-xs text-amber-700 dark:text-amber-400">
-                        Your balance is low. Get testnet tokens from the faucet before claiming.
-                      </p>
-                    </div>
-                  )}
                   <Button
                     className="w-full"
                     size="lg"
@@ -250,11 +233,6 @@ export function ClaimCard({ campaignId }: ClaimCardProps) {
                   >
                     Claim Badge
                   </Button>
-                  {!isClaimAllowed && needsFaucet && (
-                    <p className="text-xs text-center text-muted-foreground">
-                      Get testnet tokens to cover the claim fee
-                    </p>
-                  )}
                 </div>
               )}
             </>

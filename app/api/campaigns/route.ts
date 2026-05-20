@@ -73,25 +73,37 @@ export async function POST(request: Request) {
     creator,
   }).returning();
 
-  return Response.json(record, { status: 201 });
+  return Response.json({
+    ...record,
+    id: record.campaignId,
+  }, { status: 201 });
 }
 
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const q = searchParams.get("q") ?? "";
+  try {
+    const { searchParams } = new URL(request.url);
+    const q = searchParams.get("q") ?? "";
 
-  const query = db.select().from(campaigns);
+    const query = db.select().from(campaigns);
 
-  let filtered: any = query;
-  if (q) {
-    filtered = query.where(
-      or(
-        ilike(campaigns.name, `%${q}%`),
-        ilike(campaigns.creator, `%${q}%`)
-      )
-    );
+    let filtered: any = query;
+    if (q) {
+      filtered = query.where(
+        or(
+          ilike(campaigns.name, `%${q}%`),
+          ilike(campaigns.creator, `%${q}%`)
+        )
+      );
+    }
+
+    const records = await filtered.orderBy(desc(campaigns.createdAt)).limit(60);
+    const mapped = records.map((record: any) => ({
+      ...record,
+      id: record.campaignId,
+    }));
+    return Response.json(mapped);
+  } catch (err) {
+    console.error("[GET /api/campaigns] DB query failed:", err);
+    return Response.json({ error: "Failed to fetch campaigns" }, { status: 500 });
   }
-
-  const records = await filtered.orderBy(desc(campaigns.createdAt)).limit(60);
-  return Response.json(records);
 }

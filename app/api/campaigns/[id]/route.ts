@@ -18,5 +18,8 @@ export async function GET(
     return Response.json({ error: "Campaign not found" }, { status: 404 });
   }
 
-  return Response.json(record);
+  return Response.json({
+    ...record,
+    id: record.campaignId,
+  });
 }

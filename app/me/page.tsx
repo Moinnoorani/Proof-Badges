@@ -5,8 +5,9 @@ import { Copy, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { BadgeGrid } from "@/components/badge-grid";
+import { NetworkGuard } from "@/components/network-guard";
 
-export default function MePage() {
+function MePageContent() {
   const { address, isConnected } = useAccount();
 
   const handleShare = () => {
@@ -46,5 +47,13 @@ export default function MePage() {
       </div>
       <BadgeGrid address={address} />
     </div>
+  );
+}
+
+export default function MePage() {
+  return (
+    <NetworkGuard>
+      <MePageContent />
+    </NetworkGuard>
   );
 }

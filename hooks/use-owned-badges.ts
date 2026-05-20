@@ -37,6 +37,20 @@ const BADGE_ABI = [
     outputs: [{ name: "", type: "string", internalType: "string" }],
     stateMutability: "view",
   },
+  {
+    type: "function",
+    name: "campaigns",
+    inputs: [{ name: "campaignId", type: "uint256", internalType: "uint256" }],
+    outputs: [
+      { name: "startTime", type: "uint256", internalType: "uint256" },
+      { name: "endTime", type: "uint256", internalType: "uint256" },
+      { name: "maxSupply", type: "uint256", internalType: "uint256" },
+      { name: "mintedCount", type: "uint256", internalType: "uint256" },
+      { name: "soulbound", type: "bool", internalType: "bool" },
+      { name: "baseURI", type: "string", internalType: "string" },
+    ],
+    stateMutability: "view",
+  },
 ] as const;
 
 function parseTokenURI(uri: string): { name?: string; image?: string } {
@@ -113,6 +127,51 @@ export function useOwnedBadges(address: `0x${string}` | undefined) {
     query: { enabled: tokenIds.length > 0 },
   });
 
+  // Collect unique campaign IDs from the first batch so we can fetch soulbound flags.
+  const uniqueCampaignIds = useMemo(() => {
+    if (!badgeMetaData || tokenIds.length === 0) return [];
+    const ids = new Set<bigint>();
+    for (let i = 0; i < tokenIds.length; i++) {
+      const campaignResult = badgeMetaData[i * 2];
+      if (campaignResult?.status === "success") {
+        ids.add(campaignResult.result as bigint);
+      }
+    }
+    return Array.from(ids);
+  }, [badgeMetaData, tokenIds]);
+
+  const campaignDataContracts = useMemo(
+    () =>
+      uniqueCampaignIds.map((campaignId) => ({
+        address: BADGE_CONTRACT_ADDRESS,
+        abi: BADGE_ABI,
+        functionName: "campaigns" as const,
+        args: [campaignId] as const,
+      })),
+    [uniqueCampaignIds]
+  );
+
+  const { data: campaignOnChainData, isLoading: isCampaignDataLoading } =
+    useReadContracts({
+      contracts: campaignDataContracts,
+      query: { enabled: uniqueCampaignIds.length > 0 },
+    });
+
+  // Build a map from campaignId string -> soulbound boolean.
+  const soulboundByCampaign = useMemo(() => {
+    const map: Record<string, boolean> = {};
+    if (!campaignOnChainData) return map;
+    for (let i = 0; i < uniqueCampaignIds.length; i++) {
+      const result = campaignOnChainData[i];
+      if (result?.status === "success") {
+        // campaigns() returns [startTime, endTime, maxSupply, mintedCount, soulbound, baseURI]
+        const [, , , , soulbound] = result.result as [bigint, bigint, bigint, bigint, boolean, string];
+        map[uniqueCampaignIds[i].toString()] = soulbound;
+      }
+    }
+    return map;
+  }, [campaignOnChainData, uniqueCampaignIds]);
+
   const badges = useMemo(() => {
     if (!badgeMetaData || tokenIds.length === 0) return [];
 
@@ -134,17 +193,18 @@ export function useOwnedBadges(address: `0x${string}` | undefined) {
         campaignId,
         imageUrl: meta.image,
         name: meta.name,
+        soulbound: soulboundByCampaign[campaignId],
       });
     }
 
     return result;
-  }, [badgeMetaData, tokenIds]);
+  }, [badgeMetaData, tokenIds, soulboundByCampaign]);
 
   const grouped = useMemo(() => groupBadgesByCampaign(badges), [badges]);
 
   return {
     badges: grouped,
-    isLoading: isBalanceLoading || isTokenIdsLoading || isMetaLoading,
+    isLoading: isBalanceLoading || isTokenIdsLoading || isMetaLoading || isCampaignDataLoading,
     isEmpty: !isBalanceLoading && balance === 0,
   };
 }

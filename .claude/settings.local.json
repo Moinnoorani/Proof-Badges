@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -L https://raw.githubusercontent.com/foundry-rs/foundry/master/foundryup/install -o /tmp/foundryup-install.sh)",
+      "Read(//tmp/**)"
+    ]
+  }
+}

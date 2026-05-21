@@ -38,10 +38,16 @@ export async function POST(request: Request) {
     const blob = await put(`campaigns/${filename}`, buffer, { access: "public" });
     return Response.json({ url: blob.url }, { status: 201 });
   } catch {
-    const localDir = join(process.cwd(), "public", "uploads");
-    await mkdir(localDir, { recursive: true });
-    await writeFile(join(localDir, filename), buffer);
-    const url = `/uploads/${filename}`;
-    return Response.json({ url }, { status: 201 });
+    try {
+      const localDir = join(process.cwd(), "public", "uploads");
+      await mkdir(localDir, { recursive: true });
+      await writeFile(join(localDir, filename), buffer);
+      const url = `/uploads/${filename}`;
+      return Response.json({ url }, { status: 201 });
+    } catch (fsError) {
+      // Fallback to Base64 Data URL in read-only/serverless environments (like Netlify)
+      const base64Url = `data:image/${ext || "png"};base64,${buffer.toString("base64")}`;
+      return Response.json({ url: base64Url }, { status: 201 });
+    }
   }
 }

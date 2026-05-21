@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useAccount, useReadContract } from "wagmi";
 import { BADGE_CONTRACT_ADDRESS } from "@/lib/public-env";
 import { deriveStatus, type CampaignStatus } from "@/lib/status";
@@ -146,10 +146,10 @@ export function useCampaign(campaignId: string) {
     return null;
   }, [meta, onChainData, claimedData, isZeroAddress, onChainError]);
 
-  const refresh = () => {
+  const refresh = useCallback(() => {
     refetchOnChain();
     refetchClaimed();
-  };
+  }, [refetchOnChain, refetchClaimed]);
 
   const isLoading = metaLoading || (onChainLoading && !isZeroAddress);
 

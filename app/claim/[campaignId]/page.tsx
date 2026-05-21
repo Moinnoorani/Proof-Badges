@@ -1,10 +1,18 @@
 import { ClaimCard } from "@/components/claim-card";
 import { NetworkGuard } from "@/components/network-guard";
 
-export default function ClaimPage({ params }: { params: { campaignId: string } }) {
+export default function ClaimPage({
+  params,
+}: {
+  params: { campaignId: string };
+}) {
   return (
     <NetworkGuard>
-      <ClaimCard campaignId={params.campaignId} />
+      <div className="relative min-h-screen px-4 py-10 md:py-14">
+        <div className="mx-auto w-full max-w-3xl">
+          <ClaimCard campaignId={params.campaignId} />
+        </div>
+      </div>
     </NetworkGuard>
   );
 }

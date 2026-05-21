@@ -63,7 +63,7 @@ export function useUgfCreateCampaign() {
         dispatch({ type: "stage_start", stage: "execute" });
 
         const iface = new ethers.Interface([
-          "function createCampaign(uint256 maxSupply, uint256 startTime, uint256 endTime, bool soulbound, string baseURI) returns (uint256 campaignId)",
+          "function createCampaign(uint96 maxSupply, uint64 startTime, uint64 endTime, bool soulbound, string baseURI) returns (uint256 campaignId)",
         ]);
         const data = iface.encodeFunctionData("createCampaign", [
           BigInt(params.maxSupply),

@@ -2,7 +2,7 @@
 
 import { useCallback, useReducer, useState } from "react";
 import { ethers } from "ethers";
-import { useAccount } from "wagmi";
+import { useAccount, useSendTransaction, usePublicClient } from "wagmi";
 import {
   mapSdkEventToPipelineState,
   INITIAL_PIPELINE_STATE,
@@ -26,20 +26,19 @@ function pipelineReducer(
 
 export function useUgfClaim() {
   const { isConnected, address } = useAccount();
+  const { sendTransactionAsync } = useSendTransaction();
+  const publicClient = usePublicClient();
   const [state, dispatch] = useReducer(pipelineReducer, INITIAL_PIPELINE_STATE);
   const [txHash, setTxHash] = useState<string | null>(null);
   const [quote, setQuote] = useState<bigint | null>(null);
 
   const claim = useCallback(
     async (campaignId: bigint) => {
-      if (!isConnected || !address || typeof window === "undefined") return;
+      if (!isConnected || !address || !publicClient) return;
 
       dispatch({ type: "stage_start", stage: "quote" });
 
       try {
-        const provider = new ethers.BrowserProvider((window as any).ethereum);
-        const signer = await provider.getSigner();
-
         dispatch({ type: "stage_success", stage: "quote" });
         dispatch({ type: "stage_start", stage: "settle" });
         dispatch({ type: "stage_success", stage: "settle" });
@@ -50,23 +49,23 @@ export function useUgfClaim() {
         ]);
         const data = iface.encodeFunctionData("claim", [campaignId]);
 
-        // Send directly via MetaMask — no Mock USD / UGF required
-        const tx = await signer.sendTransaction({
-          to: BADGE_CONTRACT_ADDRESS,
-          data,
-          value: "0x0",
+        // Send natively using Wagmi's active connector (triggers wallet popup reliably)
+        const hash = await sendTransactionAsync({
+          to: BADGE_CONTRACT_ADDRESS as `0x${string}`,
+          data: data as `0x${string}`,
+          value: BigInt(0),
         });
 
         dispatch({ type: "stage_success", stage: "execute" });
         dispatch({ type: "stage_start", stage: "confirm" });
 
-        const receipt = await tx.wait();
-        const hash = (receipt?.hash ?? tx.hash) as `0x${string}`;
-        setTxHash(hash);
+        const receipt = await publicClient.waitForTransactionReceipt({ hash });
+        const txHashResult = (receipt?.transactionHash ?? hash) as `0x${string}`;
+        setTxHash(txHashResult);
         dispatch({
           type: "stage_success",
           stage: "confirm",
-          data: { txHash: hash },
+          data: { txHash: txHashResult },
         });
       } catch (e: any) {
         const uiError = mapErrorToUiMessage(e);
@@ -77,7 +76,7 @@ export function useUgfClaim() {
         dispatch({ type: "stage_failure", stage, error: msg });
       }
     },
-    [isConnected, address, state],
+    [isConnected, address, publicClient, sendTransactionAsync, state],
   );
 
   const retry = useCallback(() => {

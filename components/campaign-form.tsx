@@ -121,12 +121,15 @@ export function CampaignForm() {
         return;
       }
 
+      const isBase64 = values.imageUrl.startsWith("data:");
+      const baseURI = isBase64 ? "db_fallback" : values.imageUrl;
+
       create({
         maxSupply: values.maxSupply,
         startTime: values.startTime,
         endTime: values.endTime,
         soulbound: values.soulbound,
-        baseURI: values.imageUrl,
+        baseURI,
       });
     } catch {
       toast.error("Failed to start campaign creation");

@@ -2,7 +2,7 @@
 
 import { useCallback, useReducer, useState } from "react";
 import { ethers } from "ethers";
-import { useAccount } from "wagmi";
+import { useAccount, useSendTransaction, usePublicClient } from "wagmi";
 import {
   mapSdkEventToPipelineState,
   INITIAL_PIPELINE_STATE,
@@ -34,29 +34,19 @@ export interface CreateCampaignParams {
 
 export function useUgfCreateCampaign() {
   const { isConnected, address } = useAccount();
+  const { sendTransactionAsync } = useSendTransaction();
+  const publicClient = usePublicClient();
   const [state, dispatch] = useReducer(pipelineReducer, INITIAL_PIPELINE_STATE);
   const [campaignId, setCampaignId] = useState<bigint | null>(null);
   const [campaignIdError, setCampaignIdError] = useState<string | null>(null);
 
   const create = useCallback(
     async (params: CreateCampaignParams) => {
-      if (!isConnected || !address || typeof window === "undefined") return;
+      if (!isConnected || !address || !publicClient) return;
 
       dispatch({ type: "stage_start", stage: "quote" });
 
       try {
-        const signer = await Promise.race([
-          (async () => {
-            const provider = new ethers.BrowserProvider(
-              (window as any).ethereum,
-            );
-            return provider.getSigner();
-          })(),
-          new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error("Quote timed out")), 10000),
-          ),
-        ]);
-
         dispatch({ type: "stage_success", stage: "quote" });
         dispatch({ type: "stage_start", stage: "settle" });
         dispatch({ type: "stage_success", stage: "settle" });
@@ -73,17 +63,17 @@ export function useUgfCreateCampaign() {
           params.baseURI,
         ]);
 
-        // Send directly via MetaMask — no Mock USD / UGF required
-        const tx = await signer.sendTransaction({
-          to: BADGE_CONTRACT_ADDRESS,
-          data,
-          value: "0x0",
+        // Send natively using Wagmi's active connector (triggers wallet popup reliably)
+        const hash = await sendTransactionAsync({
+          to: BADGE_CONTRACT_ADDRESS as `0x${string}`,
+          data: data as `0x${string}`,
+          value: BigInt(0),
         });
 
         dispatch({ type: "stage_success", stage: "execute" });
         dispatch({ type: "stage_start", stage: "confirm" });
 
-        const receipt = await tx.wait();
+        const receipt = await publicClient.waitForTransactionReceipt({ hash });
         if (receipt) {
           const eventIface = new ethers.Interface([
             "event CampaignCreated(uint256 indexed campaignId, address indexed creator)",
@@ -115,11 +105,11 @@ export function useUgfCreateCampaign() {
           );
         }
 
-        const hash = (receipt?.hash ?? tx.hash) as `0x${string}`;
+        const txHashResult = (receipt?.transactionHash ?? hash) as `0x${string}`;
         dispatch({
           type: "stage_success",
           stage: "confirm",
-          data: { txHash: hash },
+          data: { txHash: txHashResult },
         });
       } catch (e: any) {
         const uiError = mapErrorToUiMessage(e);
@@ -127,7 +117,7 @@ export function useUgfCreateCampaign() {
         dispatch({ type: "stage_failure", stage, error: uiError.message });
       }
     },
-    [isConnected, address, state],
+    [isConnected, address, publicClient, sendTransactionAsync, state],
   );
 
   const retry = useCallback(() => {

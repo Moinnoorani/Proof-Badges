@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useReadContract, useReadContracts } from "wagmi";
 import { BADGE_CONTRACT_ADDRESS } from "@/lib/public-env";
 import { groupBadgesByCampaign, type Badge } from "@/lib/group-badges";
@@ -42,12 +42,13 @@ const BADGE_ABI = [
     name: "campaigns",
     inputs: [{ name: "campaignId", type: "uint256", internalType: "uint256" }],
     outputs: [
-      { name: "startTime", type: "uint256", internalType: "uint256" },
-      { name: "endTime", type: "uint256", internalType: "uint256" },
+      { name: "creator", type: "address", internalType: "address" },
       { name: "maxSupply", type: "uint256", internalType: "uint256" },
       { name: "mintedCount", type: "uint256", internalType: "uint256" },
+      { name: "startTime", type: "uint256", internalType: "uint256" },
+      { name: "endTime", type: "uint256", internalType: "uint256" },
       { name: "soulbound", type: "bool", internalType: "bool" },
-      { name: "baseURI", type: "string", internalType: "string" },
+      { name: "exists", type: "bool", internalType: "bool" },
     ],
     stateMutability: "view",
   },
@@ -66,6 +67,10 @@ function parseTokenURI(uri: string): { name?: string; image?: string } {
 }
 
 export function useOwnedBadges(address: `0x${string}` | undefined) {
+  const [dbCampaigns, setDbCampaigns] = useState<
+    Record<string, { name: string; imageUrl: string; soulbound: boolean }>
+  >({});
+
   const { data: balanceData, isLoading: isBalanceLoading } = useReadContract({
     address: BADGE_CONTRACT_ADDRESS,
     abi: BADGE_ABI,
@@ -164,13 +169,47 @@ export function useOwnedBadges(address: `0x${string}` | undefined) {
     for (let i = 0; i < uniqueCampaignIds.length; i++) {
       const result = campaignOnChainData[i];
       if (result?.status === "success") {
-        // campaigns() returns [startTime, endTime, maxSupply, mintedCount, soulbound, baseURI]
-        const [, , , , soulbound] = result.result as [bigint, bigint, bigint, bigint, boolean, string];
+        // campaigns() returns [creator, maxSupply, mintedCount, startTime, endTime, soulbound, exists]
+        const [, , , , , soulbound] = result.result as [string, bigint, bigint, bigint, bigint, boolean, boolean];
         map[uniqueCampaignIds[i].toString()] = soulbound;
       }
     }
     return map;
   }, [campaignOnChainData, uniqueCampaignIds]);
+
+  // Fetch missing campaign metadata from the local database API asynchronously.
+  useEffect(() => {
+    const missingIds = uniqueCampaignIds
+      .map((id) => id.toString())
+      .filter((idStr) => !dbCampaigns[idStr]);
+
+    if (missingIds.length === 0) return;
+
+    Promise.all(
+      missingIds.map((idStr) =>
+        fetch(`/api/campaigns/${idStr}`)
+          .then((res) => {
+            if (!res.ok) throw new Error("Metadata not found");
+            return res.json();
+          })
+          .catch(() => null),
+      ),
+    ).then((results) => {
+      const newMap: Record<string, { name: string; imageUrl: string; soulbound: boolean }> = {};
+      results.forEach((c) => {
+        if (c && c.campaignId) {
+          newMap[c.campaignId] = {
+            name: c.name,
+            imageUrl: c.imageUrl,
+            soulbound: c.soulbound,
+          };
+        }
+      });
+      if (Object.keys(newMap).length > 0) {
+        setDbCampaigns((prev) => ({ ...prev, ...newMap }));
+      }
+    });
+  }, [uniqueCampaignIds, dbCampaigns]);
 
   const badges = useMemo(() => {
     if (!badgeMetaData || tokenIds.length === 0) return [];
@@ -187,13 +226,14 @@ export function useOwnedBadges(address: `0x${string}` | undefined) {
       const uri = uriResult.result as string;
 
       const meta = parseTokenURI(uri);
+      const dbMeta = dbCampaigns[campaignId];
 
       result.push({
         tokenId: tokenIds[i].toString(),
         campaignId,
-        imageUrl: meta.image,
-        name: meta.name,
-        soulbound: soulboundByCampaign[campaignId],
+        imageUrl: dbMeta?.imageUrl ?? meta.image,
+        name: dbMeta?.name ?? meta.name,
+        soulbound: dbMeta?.soulbound ?? soulboundByCampaign[campaignId],
       });
     }
 

@@ -11,12 +11,13 @@ const badgeAbi = [
     name: "campaigns",
     inputs: [{ type: "uint256", name: "campaignId" }],
     outputs: [
-      { type: "uint256", name: "startTime" },
-      { type: "uint256", name: "endTime" },
+      { type: "address", name: "creator" },
       { type: "uint256", name: "maxSupply" },
       { type: "uint256", name: "mintedCount" },
+      { type: "uint256", name: "startTime" },
+      { type: "uint256", name: "endTime" },
       { type: "bool", name: "soulbound" },
-      { type: "string", name: "baseURI" },
+      { type: "bool", name: "exists" },
     ],
     stateMutability: "view",
   },
@@ -109,7 +110,15 @@ export function useCampaign(campaignId: string) {
     if (!meta) return null;
 
     if (onChainData) {
-      const [startTime, endTime, maxSupply, mintedCount] = onChainData;
+      const [, maxSupply, mintedCount, startTime, endTime] = onChainData as [
+        string,
+        bigint,
+        bigint,
+        bigint,
+        bigint,
+        boolean,
+        boolean,
+      ];
       return {
         ...meta,
         mintedCount: Number(mintedCount),

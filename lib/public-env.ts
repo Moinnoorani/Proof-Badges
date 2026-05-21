@@ -13,7 +13,7 @@ export const WALLETCONNECT_PROJECT_ID =
   process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ?? "";
 
 export const BASE_SEPOLIA_RPC =
-  process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC ?? "https://sepolia.base.org";
+  process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC ?? "https://base-sepolia-rpc.publicnode.com";
 
 export const BASESCAN_TX_URL =
   process.env.NEXT_PUBLIC_BASESCAN_TX_URL ?? "https://sepolia.basescan.org/tx/";

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Bricolage_Grotesque, Space_Grotesk } from "next/font/google";
 import localFont from "next/font/local";
 import Link from "next/link";
 import { Hexagon } from "lucide-react";
@@ -6,12 +7,19 @@ import "./globals.css";
 import { Providers } from "./providers";
 import { WalletButton } from "@/components/wallet-button";
 import { AuroraBackground } from "@/components/aurora-background";
+import { InteractiveCanvas3D } from "@/components/interactive-canvas-3d";
 import { Toaster } from "@/components/ui/sonner";
 
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
   variable: "--font-sans",
-  weight: "100 900",
+  weight: ["300", "400", "500", "600", "700"],
+});
+
+const bricolageGrotesque = Bricolage_Grotesque({
+  subsets: ["latin"],
+  variable: "--font-heading",
+  weight: ["400", "500", "600", "700", "800"],
 });
 
 const geistMono = localFont({
@@ -40,10 +48,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}
+        className={`${spaceGrotesk.variable} ${bricolageGrotesque.variable} ${geistMono.variable} font-sans antialiased`}
       >
         <Providers>
           <AuroraBackground />
+          <InteractiveCanvas3D />
           <header className="sticky top-0 z-40 w-full">
             <div className="glass border-b border-white/5 backdrop-saturate-150">
               <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-6 px-4 sm:px-6">

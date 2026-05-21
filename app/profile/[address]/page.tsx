@@ -2,6 +2,7 @@ import { isAddress } from "viem";
 import { AlertCircle } from "lucide-react";
 import { BadgeGrid } from "@/components/badge-grid";
 import { NetworkGuard } from "@/components/network-guard";
+import { ScrollParallaxContainer } from "@/components/scroll-parallax-container";
 
 function AddressAvatar({ address }: { address: string }) {
   const initials = address.slice(2, 6).toUpperCase();
@@ -68,41 +69,44 @@ export default function ProfilePage({
 
   return (
     <NetworkGuard>
-      <div className="mx-auto w-full max-w-7xl space-y-10 px-4 py-10 md:py-14">
-        <header className="relative animate-fade-up space-y-6">
-          <div className="space-y-3">
-            <div className="gradient-border inline-flex rounded-full">
-              <span className="glass inline-flex items-center gap-2 rounded-full px-3 py-1 text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground">
-                Public profile
-              </span>
+      <div className="mx-auto w-full max-w-7xl px-4 py-10 md:py-14">
+        <ScrollParallaxContainer className="space-y-10">
+          <header className="relative animate-fade-up space-y-6">
+            <div className="space-y-3">
+              <div className="gradient-border inline-flex rounded-full">
+                <span className="glass inline-flex items-center gap-2 rounded-full px-3 py-1 text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground">
+                  Public profile
+                </span>
+              </div>
+              <h1 className="font-heading text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl">
+                <span className="text-gradient">Badges</span>{" "}
+                <span className="text-foreground/90">on chain</span>
+              </h1>
             </div>
-            <h1 className="font-heading text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl">
-              <span className="text-gradient">Badges</span>{" "}
-              <span className="text-foreground/90">on chain</span>
-            </h1>
-          </div>
 
-          {/* Profile chip (read-only) */}
-          <div className="gradient-border glass inline-flex items-center gap-3 rounded-full py-2 pr-4 pl-2">
-            <AddressAvatar address={address} />
-            <div className="flex flex-col">
-              <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                Wallet
-              </span>
-              <span className="font-mono text-sm font-medium text-foreground">
-                {address.slice(0, 6)}…{address.slice(-4)}
-              </span>
+            {/* Profile chip (read-only) */}
+            <div className="gradient-border glass inline-flex items-center gap-3 rounded-full py-2 pr-4 pl-2">
+              <AddressAvatar address={address} />
+              <div className="flex flex-col">
+                <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                  Wallet
+                </span>
+                <span className="font-mono text-sm font-medium text-foreground">
+                  {address.slice(0, 6)}…{address.slice(-4)}
+                </span>
+              </div>
             </div>
-          </div>
-        </header>
+          </header>
 
-        <div
-          className="animate-fade-up opacity-0"
-          style={{ animationDelay: "120ms", animationFillMode: "forwards" }}
-        >
-          <BadgeGrid address={address as `0x${string}`} />
-        </div>
+          <div
+            className="animate-fade-up opacity-0"
+            style={{ animationDelay: "120ms", animationFillMode: "forwards" }}
+          >
+            <BadgeGrid address={address as `0x${string}`} />
+          </div>
+        </ScrollParallaxContainer>
       </div>
     </NetworkGuard>
   );
 }
+

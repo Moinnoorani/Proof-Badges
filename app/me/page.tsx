@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { BadgeGrid } from "@/components/badge-grid";
 import { NetworkGuard } from "@/components/network-guard";
+import { ScrollParallaxContainer } from "@/components/scroll-parallax-container";
 
 function AddressAvatar({ address }: { address: string }) {
   const initials = address.slice(2, 6).toUpperCase();
@@ -75,50 +76,56 @@ function MePageContent() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-10 px-4 py-10 md:py-14">
-      {/* Hero */}
-      <header className="relative animate-fade-up space-y-6">
-        <div className="space-y-3">
-          <h1 className="font-heading text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl">
-            <span className="text-foreground/90">My</span>{" "}
-            <span className="text-gradient">Collection</span>
-          </h1>
-          <p className="max-w-xl text-sm text-muted-foreground sm:text-base">
-            Every badge you’ve earned, grouped by campaign.
-          </p>
-        </div>
-
-        {/* Profile chip */}
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="gradient-border glass inline-flex items-center gap-3 rounded-full py-2 pr-4 pl-2">
-            <AddressAvatar address={address} />
-            <div className="flex flex-col">
-              <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                Connected
-              </span>
-              <span className="font-mono text-sm font-medium text-foreground">
-                {address.slice(0, 6)}…{address.slice(-4)}
-              </span>
-            </div>
+    <ScrollParallaxContainer
+      rotationIntensity={0.3}
+      translationIntensity={0.2}
+      scaleEffect={false}
+    >
+      <div className="mx-auto w-full max-w-7xl space-y-10 px-4 py-10 md:py-14">
+        {/* Hero */}
+        <header className="relative animate-fade-up space-y-6">
+          <div className="space-y-3">
+            <h1 className="font-heading text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl">
+              <span className="text-foreground/90">My</span>{" "}
+              <span className="text-gradient">Collection</span>
+            </h1>
+            <p className="max-w-xl text-sm text-muted-foreground sm:text-base">
+              Every badge you’ve earned, grouped by campaign.
+            </p>
           </div>
-          <Button
-            variant="outline"
-            onClick={handleShare}
-            className="rounded-full border-white/15 bg-white/5 backdrop-blur-md hover:border-cyan/40 hover:bg-white/10"
-          >
-            <Copy className="size-3.5" />
-            Share
-          </Button>
-        </div>
-      </header>
 
-      <div
-        className="animate-fade-up opacity-0"
-        style={{ animationDelay: "120ms", animationFillMode: "forwards" }}
-      >
-        <BadgeGrid address={address} />
+          {/* Profile chip */}
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="gradient-border glass inline-flex items-center gap-3 rounded-full py-2 pr-4 pl-2">
+              <AddressAvatar address={address} />
+              <div className="flex flex-col">
+                <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                  Connected
+                </span>
+                <span className="font-mono text-sm font-medium text-foreground">
+                  {address.slice(0, 6)}…{address.slice(-4)}
+                </span>
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              onClick={handleShare}
+              className="rounded-full border-white/15 bg-white/5 backdrop-blur-md hover:border-cyan/40 hover:bg-white/10"
+            >
+              <Copy className="size-3.5" />
+              Share
+            </Button>
+          </div>
+        </header>
+
+        <div
+          className="animate-fade-up opacity-0"
+          style={{ animationDelay: "120ms", animationFillMode: "forwards" }}
+        >
+          <BadgeGrid address={address} />
+        </div>
       </div>
-    </div>
+    </ScrollParallaxContainer>
   );
 }
 

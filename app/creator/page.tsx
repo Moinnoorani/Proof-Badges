@@ -16,6 +16,7 @@ import { CampaignCard, type CampaignCardData } from "@/components/campaign-card"
 import { Skeleton } from "@/components/ui/skeleton";
 import { sortCampaignsByRecency } from "@/lib/sort-campaigns";
 import { NetworkGuard } from "@/components/network-guard";
+import { ScrollParallaxContainer } from "@/components/scroll-parallax-container";
 
 function CreateCampaignButton({ first = false }: { first?: boolean }) {
   return (
@@ -259,16 +260,22 @@ export default function CreatorDashboardPage() {
     <NetworkGuard>
       <div className="relative min-h-screen px-4 py-10 md:py-14">
         <div className="mx-auto w-full max-w-7xl">
-          <Suspense
-            fallback={
-              <div className="space-y-8">
-                <Skeleton className="h-12 w-64 rounded-full bg-white/5" />
-                <LoadingSkeleton />
-              </div>
-            }
+          <ScrollParallaxContainer
+            rotationIntensity={0.0}
+            translationIntensity={0.2}
+            scaleEffect={false}
           >
-            <CreatorDashboardContent />
-          </Suspense>
+            <Suspense
+              fallback={
+                <div className="space-y-8">
+                  <Skeleton className="h-12 w-64 rounded-full bg-white/5" />
+                  <LoadingSkeleton />
+                </div>
+              }
+            >
+              <CreatorDashboardContent />
+            </Suspense>
+          </ScrollParallaxContainer>
         </div>
       </div>
     </NetworkGuard>

@@ -29,6 +29,7 @@ export function TiltCard({
   const ref = useRef<HTMLDivElement | null>(null);
   const frame = useRef<number | null>(null);
   const pending = useRef<{ x: number; y: number } | null>(null);
+  const rectRef = useRef<DOMRect | null>(null);
 
   const apply = useCallback(() => {
     frame.current = null;
@@ -36,7 +37,10 @@ export function TiltCard({
     const pt = pending.current;
     if (!el || !pt) return;
 
-    const rect = el.getBoundingClientRect();
+    if (!rectRef.current) {
+      rectRef.current = el.getBoundingClientRect();
+    }
+    const rect = rectRef.current;
     if (rect.width === 0 || rect.height === 0) return;
 
     const px = (pt.x - rect.left) / rect.width; // 0..1
@@ -70,15 +74,14 @@ export function TiltCard({
       frame.current = null;
     }
     pending.current = null;
+    rectRef.current = null;
     const el = ref.current;
     if (!el) return;
     el.style.setProperty("--rx", "0deg");
     el.style.setProperty("--ry", "0deg");
     el.style.setProperty("--mx", "50%");
     el.style.setProperty("--my", "50%");
-  }, []);
-
-  return (
+  }, []);  return (
     <div
       ref={ref}
       data-tilt

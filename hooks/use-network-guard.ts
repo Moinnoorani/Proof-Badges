@@ -1,12 +1,12 @@
-import { useSwitchChain, useChainId } from "wagmi";
+import { useSwitchChain, useAccount } from "wagmi";
 import { useCallback } from "react";
 import { baseSepolia } from "wagmi/chains";
 
 export function useNetworkGuard() {
-  const chainId = useChainId();
+  const { chainId, isConnected } = useAccount();
   const { switchChainAsync } = useSwitchChain();
 
-  const isCorrectNetwork = chainId === baseSepolia.id;
+  const isCorrectNetwork = !isConnected || chainId === baseSepolia.id;
 
   const switchToBaseSepolia = useCallback(async () => {
     await switchChainAsync({ chainId: baseSepolia.id });
